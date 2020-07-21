@@ -18,6 +18,7 @@ from ._mysql import mysql_handler
 from ._spring_cloud import spring_cloud_handler
 import subprocess
 from getpass import getpass
+import sys
 
 logger = get_logger(__name__)
 
@@ -463,6 +464,7 @@ def bind_webapp(
     except Exception as e:
         print(e)
         logger.error(e)
+        sys.exit(1)
 
 
 def bind_springcloud(
@@ -481,6 +483,7 @@ def bind_springcloud(
     except Exception as e:
         print(e)
         logger.error(e)
+        sys.exit(1)
 
 
 def bind_function(
@@ -500,6 +503,7 @@ def bind_function(
     except Exception as e:
         print(e)
         logger.error(e)
+        sys.exit(1)
 
 
 def validate_general(cmd, resource_group, name):
@@ -517,3 +521,4 @@ def validate_general(cmd, resource_group, name):
     except Exception as e:
         print(e)
         logger.error(e)
+        sys.exit(1)
