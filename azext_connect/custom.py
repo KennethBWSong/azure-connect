@@ -19,6 +19,7 @@ from ._spring_cloud import spring_cloud_handler
 import subprocess
 from getpass import getpass
 import sys
+import re
 
 logger = get_logger(__name__)
 
@@ -382,11 +383,50 @@ def create_resource(service, resource_group, deployment_id, settings, para_dict)
         spring_cloud_handler(resource_group, deployment_id, settings, para_dict)
 
 
+COSMOSDB_KIND = ['GlobalDocumentDB', 'MongoDB', 'Parse']
+COSMOS_CAPABILITES = ['EnableCassandra', 'EnableTable', 'EnableGremlin']
+COSMOS_DATABASE_TYPE = ['cassandraKeyspaces', 'tables', 'gremlinDatabases', 'sqlDatabases', 'mongodbDatabases']
+
+
 def _is_resourcid(resource):
     return resource.startswith('/subscriptions/')
 
 
-def _get_target_id(scope, sql=None, mysql=None, postgre=None, cosmos=None, database=None, signalR=None, keyvault=None):
+def _get_rg_from_scope(scope):
+    if scope.startswith('/subscriptions'):
+        match = re.search(r"\/resourceGroups\/[^\/]+", scope)
+        if (match):
+            return match.group().split("/")[2]
+    raise Exception('Can not get resource group from {0}'.format(scope))
+
+
+def _get_cosmos_database_type(resource_group, cosmos_account):
+    cli = get_default_cli()
+    parameters = [
+        'cosmosdb', 'show',
+        '--name', cosmos_account,
+        '--resource-group', resource_group,
+        '--output', 'none'
+    ]
+    if cli.invoke(parameters):
+        raise CLIError('Fail to show CosmosDb account %s info.' % cosmos_account)
+    kind = cli.result.result['kind']
+    capabilites = cli.result.result['capabilities']
+    if kind == COSMOSDB_KIND[0]:
+        for item in capabilites:
+            if item.Name == COSMOS_CAPABILITES[0]:
+                return COSMOS_DATABASE_TYPE[0]
+            if item.Name == COSMOS_CAPABILITES[1]:
+                return COSMOS_DATABASE_TYPE[1]
+            if item.Name == COSMOS_CAPABILITES[2]:
+                return COSMOS_DATABASE_TYPE[2]
+        return COSMOS_DATABASE_TYPE[3]
+    if kind == COSMOSDB_KIND[1]:
+        return COSMOS_DATABASE_TYPE[4]
+    raise Exception('CosmosDB database type not supported')
+
+
+def _get_target_id(scope, sql=None, mysql=None, cosmos=None, database=None, signalR=None, keyvault=None):
     if sql and database:
         sql = sql if _is_resourcid(sql) else '{0}/providers/Microsoft.Sql/servers/{1}'.format(scope, sql)
         return '{0}/databases/{1}/'.format(sql, database)
@@ -397,8 +437,12 @@ def _get_target_id(scope, sql=None, mysql=None, postgre=None, cosmos=None, datab
         postgre = postgre if _is_resourcid(postgre) else '{0}/providers/Microsoft.DBforPostgreSQL/servers/{1}'.format(scope, postgre)
         return '{0}/databases/{1}'.format(postgre, database)
     if cosmos and database:
-        cosmos = cosmos if _is_resourcid(cosmos) else '{0}/providers/Microsoft.DocumentDb/databaseAccounts/{1}'.format(scope, cosmos)
-        return '{0}/databases/{1}'.format(cosmos, database)
+        if _is_resourcid(cosmos):
+            cosmos_id = cosmos
+        else:
+            cosmos_id = '{0}/providers/Microsoft.DocumentDb/databaseAccounts/{1}'.format(scope, cosmos)
+        database_type = _get_cosmos_database_type(_get_rg_from_scope(scope), cosmos)
+        return '{0}/{1}/{2}'.format(cosmos_id, database_type, database)
     if signalR:
         return signalR if _is_resourcid(signalR) else '{0}/providers/Microsoft.SignalRService/signalR/{1}'.format(scope, signalR)
     if keyvault:
@@ -445,7 +489,11 @@ def bind_webapp(
         subscription = get_subscription_id(cmd.cli_ctx)
         scope = '/subscriptions/{0}/resourceGroups/{1}'.format(subscription, resource_group)
         source = '{0}/providers/Microsoft.Web/sites/{1}'.format(scope, appname)
+<<<<<<< HEAD
         target = _get_target_id(scope, sql=sql, cosmos=cosmos, mysql=mysql, postgre=postgre, database=database, keyvault=keyvault)
+=======
+        target = _get_target_id(scope, sql=sql, cosmos=cosmos, mysql=mysql, database=database, keyvault=keyvault)
+>>>>>>> 771616ae02008258acd9fb99c58b633abf74bec2
         result = _bind(
             cmd, subscription, resource_group, name, source,
             target, authtype, permission, client_id, client_secret, username, password
