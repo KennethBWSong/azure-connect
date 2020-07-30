@@ -426,7 +426,7 @@ def _get_cosmos_database_type(resource_group, cosmos_account):
     raise Exception('CosmosDB database type not supported')
 
 
-def _get_target_id(scope, sql=None, mysql=None, cosmos=None, database=None, signalR=None, keyvault=None):
+def _get_target_id(scope, sql=None, mysql=None, postgre=None, cosmos=None, database=None, signalR=None, keyvault=None):
     if sql and database:
         sql = sql if _is_resourcid(sql) else '{0}/providers/Microsoft.Sql/servers/{1}'.format(scope, sql)
         return '{0}/databases/{1}/'.format(sql, database)
