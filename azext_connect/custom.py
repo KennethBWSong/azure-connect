@@ -386,13 +386,16 @@ def _is_resourcid(resource):
     return resource.startswith('/subscriptions/')
 
 
-def _get_target_id(scope, sql=None, mysql=None, cosmos=None, database=None, signalR=None, keyvault=None):
+def _get_target_id(scope, sql=None, mysql=None, postgre=None, cosmos=None, database=None, signalR=None, keyvault=None):
     if sql and database:
         sql = sql if _is_resourcid(sql) else '{0}/providers/Microsoft.Sql/servers/{1}'.format(scope, sql)
         return '{0}/databases/{1}/'.format(sql, database)
     if mysql and database:
         mysql = mysql if _is_resourcid(mysql) else '{0}/providers/Microsoft.DBforMySQL/servers/{1}'.format(scope, mysql)
         return '{0}/databases/{1}'.format(mysql, database)
+    if postgre and database:
+        postgre = postgre if _is_resourcid(postgre) else '{0}/providers/Microsoft.DBforPostgreSQL/servers/{1}'.format(scope, postgre)
+        return '{0}/databases/{1}'.format(postgre, database)
     if cosmos and database:
         cosmos = cosmos if _is_resourcid(cosmos) else '{0}/providers/Microsoft.DocumentDb/databaseAccounts/{1}'.format(scope, cosmos)
         return '{0}/databases/{1}'.format(cosmos, database)
@@ -434,7 +437,7 @@ def _bind(
 
 def bind_webapp(
     cmd, resource_group, name, appname, authtype='MSI', permission=None,
-    sql=None, mysql=None, cosmos=None, database=None, client_id=None,
+    sql=None, mysql=None, postgre=None, cosmos=None, database=None, client_id=None,
     client_secret=None, username=None, password=None,
     keyvault=None
 ):
@@ -442,7 +445,7 @@ def bind_webapp(
         subscription = get_subscription_id(cmd.cli_ctx)
         scope = '/subscriptions/{0}/resourceGroups/{1}'.format(subscription, resource_group)
         source = '{0}/providers/Microsoft.Web/sites/{1}'.format(scope, appname)
-        target = _get_target_id(scope, sql=sql, cosmos=cosmos, mysql=mysql, database=database, keyvault=keyvault)
+        target = _get_target_id(scope, sql=sql, cosmos=cosmos, mysql=mysql, postgre=postgre, database=database, keyvault=keyvault)
         result = _bind(
             cmd, subscription, resource_group, name, source,
             target, authtype, permission, client_id, client_secret, username, password
