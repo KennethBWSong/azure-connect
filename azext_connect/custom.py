@@ -489,11 +489,7 @@ def bind_webapp(
         subscription = get_subscription_id(cmd.cli_ctx)
         scope = '/subscriptions/{0}/resourceGroups/{1}'.format(subscription, resource_group)
         source = '{0}/providers/Microsoft.Web/sites/{1}'.format(scope, appname)
-<<<<<<< HEAD
         target = _get_target_id(scope, sql=sql, cosmos=cosmos, mysql=mysql, postgre=postgre, database=database, keyvault=keyvault)
-=======
-        target = _get_target_id(scope, sql=sql, cosmos=cosmos, mysql=mysql, database=database, keyvault=keyvault)
->>>>>>> 771616ae02008258acd9fb99c58b633abf74bec2
         result = _bind(
             cmd, subscription, resource_group, name, source,
             target, authtype, permission, client_id, client_secret, username, password
