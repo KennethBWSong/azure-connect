@@ -566,7 +566,7 @@ def get_general(cmd, resource_group, name):
         if result.ok is not True:
             end = result.text.find('\r\n\r\nHEADERS\r\n=======')
             msg = result.text[:end] if end > -1 else result.text
-            err_msg = 'Fail to validate the connection {0}. Code:{1}. Detail:{2}'.format(name, result.status_code, msg)
+            err_msg = 'Fail to get the connection {0}. Code:{1}. Detail:{2}'.format(name, result.status_code, msg)
             raise Exception(err_msg)
         res_obj = json.loads(result.text)
         print(json.dumps(res_obj, indent=2))
